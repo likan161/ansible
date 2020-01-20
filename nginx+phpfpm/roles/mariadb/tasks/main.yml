@@ -1,0 +1,52 @@
+- name: Install Mariadb
+  package:
+    name: mariadb-server
+    state: present
+
+- name: Started Mariadb and enabled autorun
+  service:
+    name: mariadb
+    state: started
+    enabled: yes
+
+- name: generate new ROOT password
+  command: /usr/bin/pwgen 10 -c1
+  register: mysql_root_password
+
+- set_fact:
+    mysql_root_password: "{{mysql_root_password.stdout}}"
+
+- name: Change root password
+  mysql_user:
+    name: root
+    password: "{{ mysql_root_password}}"
+  notify: restart mariadb
+
+- name: generate new user password
+  command: /usr/bin/pwgen 10 -c1
+  register: db_user_pass 
+ 
+- set_fact:
+    db_user_pass: "{{db_user_pass.stdout}}"
+ 
+- name: install my.cnf
+  template: src=my.cnf dest=/root/.my.cnf
+
+- name: install password.txt
+  template: src=password.txt dest=/root/password.txt
+
+- name: Create new database
+  mysql_db:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    name: "{{ ansible_hostname }}"
+    state: present
+ 
+- name : Create database user
+  mysql_user :
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    name : "{{ ansible_hostname }}"
+    password : "{{ db_user_pass }}"
+    priv : '*.*:ALL'
+    state : present

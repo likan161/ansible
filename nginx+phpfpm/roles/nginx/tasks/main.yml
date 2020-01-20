@@ -1,0 +1,56 @@
+- name: Install nginx
+  package:
+    name: nginx
+    state: present
+
+- name: Start nginx and enabled autorun
+  service:
+    name: nginx
+    state: started
+    enabled: yes
+
+- name: create directories
+  file: path={{item}} state=directory
+  with_items:
+     - /srv/www
+     - /srv/www/{{ server_name }}/httpdocs
+     - /srv/www/{{ server_name }}/logs
+     - /srv/www/{{ server_name }}/conf
+     - /etc/nginx/ssl
+     - /etc/nginx/vhosts
+
+- name: copy TLS key
+  copy: src=nginxkey.pem dest={{nginx_key}} owner=root mode=0600
+  notify: restart nginx
+
+- name: copy TLS pem
+  copy : src=nginx.pem dest={{nginx_pem}} owner=root mode=0600
+  notify: restart nginx
+
+- name: copy index.php file
+  copy: src=info.php dest=/srv/www/{{ server_name }}/httpdocs/index.php owner=root mode=0644
+
+- name: install nginx conf
+  template: src=nginx.conf dest=/srv/www/{{ server_name }}/conf/nginx.conf
+
+- name: activate site configuration
+  file:
+    src: '/srv/www/{{ server_name }}/conf/nginx.conf'
+    dest: '/etc/nginx/vhosts/{{ server_name }}.conf'
+    state: 'link'
+
+- name: change conf dir
+  lineinfile:
+    dest: '/etc/nginx/nginx.conf'
+    insertafter: '/etc/nginx/conf.d'
+    line: '    include /etc/nginx/vhosts/*.conf;'
+  notify: restart nginx
+
+- name: firewalld add https
+  firewalld:
+    service: https
+    permanent: yes
+    state: enabled
+
+- name: restart firewalld
+  service: name=firewalld state=restarted

@@ -1,0 +1,32 @@
+- name: Install php-fpm
+  package: 
+    name: php{{ php_fpm_version }}-php-fpm.x86_64 
+    state: present
+
+- name: Install php-fpm modules
+  package:
+    name: 
+      - php{{ php_fpm_version }}-php-mysqlnd.x86_64
+      - php{{ php_fpm_version }}-php-mbstring.x86_64 
+    state: present
+
+- name:  PHP-FPM started and enabled
+  service:
+    name: php{{ php_fpm_version }}-php-fpm
+    state: started
+    enabled: yes
+
+- name: create directories
+  file: path=/var/run/php-fpm state=directory
+
+- name: install php-fpm conf
+  template: src=php-fpm.conf dest=/srv/www/{{ server_name }}/conf/php-fpm.conf
+
+- name: activate pfp-fpm configuration
+  file:
+    src: '/srv/www/{{ server_name }}/conf/php-fpm.conf'
+    dest: '/etc/opt/remi/php{{ php_fpm_version }}/php-fpm.d/{{ server_name }}.conf'
+    state: 'link'
+
+- name: restart php{{ php_fpm_version }}-php-fpm
+  service: name=php{{ php_fpm_version }}-php-fpm state=restarted

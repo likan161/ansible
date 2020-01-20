@@ -1,0 +1,36 @@
+- name: create tmp directories
+  file: path=/tmp/phpmyadmintmp state=directory
+
+- name : Downloads PhpMyAdmin
+  unarchive : remote_src=True src=https://files.phpmyadmin.net/phpMyAdmin/5.0.1/phpMyAdmin-5.0.1-all-languages.zip dest=/tmp/phpmyadmintmp
+
+- name: Install PhpMyAdmin
+  command: mv /tmp/phpmyadmintmp/phpMyAdmin-5.0.1-all-languages /usr/share/phpmyadmin
+
+- name: Recursively remove tmp
+  file: path=/tmp/phpmyadmintmp state=absent
+
+- name : Copy config PhpMyAdmin
+  copy: remote_src=True src=/usr/share/phpmyadmin/config.sample.inc.php dest=/usr/share/phpmyadmin/config.inc.php
+
+- name: create phpmyadmin/tmp directories
+  file: path=/usr/share/phpmyadmin/tmp state=directory mode=0777
+
+- name: install PHP-FPM conf
+  template: src=php-fpm.conf dest=/etc/opt/remi/php{{ php_fpm_version }}/php-fpm.d/phpmyadmin.conf
+  notify: restart php{{ php_fpm_version }}-php-fpm
+
+- name: install nginx conf
+  template: src=nginx.conf dest=/etc/nginx/vhosts/{{ ansible_eth0.ipv4.address }}.conf
+  notify: restart nginx
+
+- name: firewalld add http
+  firewalld:
+    service: http
+    permanent: yes
+    state: enabled
+
+- name: restart firewalld
+  service: name=firewalld state=restarted
+
+

@@ -1,0 +1,5 @@
+server_name: likan.space
+#php_fpm_version: "71"
+#php_fpm_version: "72"
+#php_fpm_version: "73"
+php_fpm_version: "74"

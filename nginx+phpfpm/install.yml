@@ -1,0 +1,10 @@
+- name: install nginx+php-fpm+mariadb+phpmyadmin5
+  hosts: webservers
+  vars_files:
+    - ./config.yml
+  roles:
+    - default
+    - nginx
+    - php-fpm
+    - mariadb
+    - phpmyadmin

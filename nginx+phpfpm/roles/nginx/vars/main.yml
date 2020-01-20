@@ -1,0 +1,3 @@
+         nginx_pem: /etc/nginx/ssl/nginx.pem
+         nginx_key: /etc/nginx/ssl/nginxkey.pem
+        # server_name: likan.space
